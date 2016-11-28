@@ -9,6 +9,7 @@ services:
 cache:
   directories:
     - $HOME/.cache/pip
+    - /home/travis/docker/
 
 env:
   global:
@@ -22,10 +23,13 @@ env:
     - DEPLOY_TRIGGER_URL=https://bot.radio-t.com:1443/deploy
     - DEPLOY_USER=
     - DEPLOY_PASSWD=
+    - DOCKER_CACHE_FILE=/home/travis/docker/cache.tar.gz
+
 
 before_install:
   - pip install docker-compose==1.9.0
   - openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=US/ST=Test/L=Test/O=Dis/CN=localhost" -keyout "etc/ssl/${SSL_KEY}" -out "etc/ssl/${SSL_CERT}"
+  - if [ -f ${DOCKER_CACHE_FILE} ]; then gunzip -c ${DOCKER_CACHE_FILE} | docker load; fi
 
 install:
   - pip install -r ci/requirements.txt
@@ -42,6 +46,8 @@ script:
   - BOT_BASE_URL="https://localhost" python ci/run_bot_tests.py .
   - |
       if [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+        mkdir -p $(dirname ${DOCKER_CACHE_FILE})
+        docker save $(docker history -q ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} | grep -v '<missing>') | gzip > ${DOCKER_CACHE_FILE};
         docker login \
           --username "$DOCKER_REGISTRY_LOGIN" \
           --password "$DOCKER_REGISTRY_PASSWORD" \
