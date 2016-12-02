@@ -48,17 +48,6 @@ script:
       if [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
         mkdir -p $(dirname ${DOCKER_CACHE_FILE})
         docker save $(docker history -q ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} | grep -v '<missing>') | gzip > ${DOCKER_CACHE_FILE};
-        docker login \
-          --username "$DOCKER_REGISTRY_LOGIN" \
-          --password "$DOCKER_REGISTRY_PASSWORD" \
-          "$DOCKER_REGISTRY_HOST"
-        docker-compose push
-        echo "Deploying containers..."
-        deploy_result=$(curl -X POST \
-            -u "${DEPLOY_USER}:${DEPLOY_PASSWD}" \
-            "$DEPLOY_TRIGGER_URL")
-        echo "$deploy_result"
-        echo "$deploy_result" | grep -q '"status": "ok"'
       fi
 
 after_script:
