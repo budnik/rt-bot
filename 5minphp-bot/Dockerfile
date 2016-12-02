@@ -4,5 +4,5 @@ COPY ./src /bot
 WORKDIR /bot/
 
 EXPOSE 8080
-
+RUN env
 CMD ["php", "-S", "0.0.0.0:8080"]
